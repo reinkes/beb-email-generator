@@ -56,6 +56,7 @@ class UIManager {
     setupEventListeners() {
         this.setupWeekSelection();
         this.setupTimeAllSetter();
+        this.setupCheckboxAllSetter();
         this.setupBebLocationChange();
         this.setupFormValidation();
         this.setupButtonListeners();
@@ -100,6 +101,39 @@ class UIManager {
                 if (timeInput) {
                     timeInput.value = selectedTime;
                     this.validation.validateTime(timeInput);
+                }
+            });
+
+            this.saveFormData();
+        });
+    }
+
+    /**
+     * Setup "select all checkboxes" functionality
+     * @private
+     */
+    setupCheckboxAllSetter() {
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        const deselectAllBtn = document.getElementById('deselectAllBtn');
+
+        if (!selectAllBtn || !deselectAllBtn) return;
+
+        selectAllBtn.addEventListener('click', () => {
+            this.formFields.checkbox.forEach(checkboxId => {
+                const checkbox = document.getElementById(checkboxId);
+                if (checkbox) {
+                    checkbox.checked = true;
+                }
+            });
+
+            this.saveFormData();
+        });
+
+        deselectAllBtn.addEventListener('click', () => {
+            this.formFields.checkbox.forEach(checkboxId => {
+                const checkbox = document.getElementById(checkboxId);
+                if (checkbox) {
+                    checkbox.checked = false;
                 }
             });
 
