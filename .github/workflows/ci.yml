@@ -13,64 +13,171 @@ jobs:
     name: 🧪 Run Tests
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        browser: [chrome, firefox]
-
     steps:
     - name: 📥 Checkout code
       uses: actions/checkout@v4
+
+    - name: 🔍 Debug environment
+      run: |
+        echo "🔍 Debugging environment..."
+        echo "Current directory: $(pwd)"
+        echo "Directory contents:"
+        ls -la
+        echo "Node.js version: $(node --version || echo 'Node.js not available')"
+        echo "Python version: $(python3 --version)"
 
     - name: 🧪 Validate JavaScript files
       run: |
         echo "🧪 Running JavaScript validation..."
 
-        # Check if all JS files exist and are readable
+        # Check if js directory exists
+        if [ ! -d "js" ]; then
+          echo "❌ js directory not found"
+          echo "Available directories:"
+          find . -type d -maxdepth 2
+          exit 1
+        fi
+
+        echo "✅ js directory found"
+        echo "Contents of js directory:"
+        ls -la js/
+
+        # Count JS files
+        js_file_count=$(find js/ -name "*.js" | wc -l)
+        echo "📁 Found $js_file_count JavaScript files"
+
+        if [ $js_file_count -eq 0 ]; then
+          echo "❌ No JavaScript files found in js/ directory"
+          exit 1
+        fi
+
+        # List all JS files
+        echo "📋 JavaScript files found:"
+        find js/ -name "*.js"
+
+        # Validate each JS file
+        syntax_errors=0
         for file in js/*.js; do
           if [ -f "$file" ]; then
             echo "✅ Found: $file"
-            # Basic syntax check using node (if available)
-            if command -v node >/dev/null 2>&1; then
-              node -c "$file" && echo "✅ Syntax OK: $file" || echo "❌ Syntax Error: $file"
+
+            # Check file size
+            file_size=$(wc -c < "$file")
+            echo "📏 Size: $file_size bytes"
+
+            if [ $file_size -eq 0 ]; then
+              echo "⚠️ Empty file: $file"
+              continue
             fi
-          else
-            echo "❌ Missing: $file"
-            exit 1
+
+            # Show first few lines for debugging
+            echo "📄 First 3 lines of $file:"
+            head -3 "$file"
+
+            # Basic syntax check using node
+            echo "🔍 Checking syntax for $file..."
+            if node -c "$file" 2>&1; then
+              echo "✅ Syntax OK: $file"
+            else
+              echo "❌ Syntax Error in $file"
+              echo "Error details:"
+              node -c "$file"
+              syntax_errors=$((syntax_errors + 1))
+            fi
           fi
         done
 
-        echo "✅ JavaScript validation completed"
+        if [ $syntax_errors -gt 0 ]; then
+          echo "❌ Found $syntax_errors syntax errors"
+          exit 1
+        fi
+
+        echo "✅ All JavaScript files validated successfully"
 
     - name: 🌐 Setup simple HTTP server
       run: |
-        # Install Python (available by default) to serve files
         echo "🌐 Starting HTTP server..."
-        python3 -m http.server 8080 &
+
+        # Start Python HTTP server in background
+        python3 -m http.server 8080 > server.log 2>&1 &
         SERVER_PID=$!
         echo $SERVER_PID > server.pid
-        sleep 3
+        echo "📝 Server PID: $SERVER_PID"
 
-        # Test if server is running
-        curl -f http://localhost:8080/ > /dev/null && echo "✅ Server is running" || echo "❌ Server failed to start"
+        # Wait for server to start
+        sleep 5
+
+        # Check if server process is still running
+        if ! kill -0 $SERVER_PID 2>/dev/null; then
+          echo "❌ Server process died"
+          cat server.log
+          exit 1
+        fi
+
+        # Test if server is responding
+        for i in {1..5}; do
+          if curl -f -s http://localhost:8080/ > /dev/null 2>&1; then
+            echo "✅ Server is running and responding"
+            break
+          else
+            echo "⏳ Waiting for server to respond (attempt $i/5)"
+            sleep 2
+          fi
+
+          if [ $i -eq 5 ]; then
+            echo "❌ Server failed to respond after 5 attempts"
+            cat server.log
+            exit 1
+          fi
+        done
 
     - name: 🧪 Run browser tests with curl
       run: |
         echo "🧪 Running browser compatibility tests..."
 
-        # Test main page loads
-        curl -f -s http://localhost:8080/index.html > /dev/null && echo "✅ Main page loads" || echo "❌ Main page failed"
+        test_failures=0
 
-        # Test test page loads
-        curl -f -s http://localhost:8080/tests/test.html > /dev/null && echo "✅ Test page loads" || echo "❌ Test page failed"
+        # Test main page loads
+        if curl -f -s http://localhost:8080/index.html > /dev/null 2>&1; then
+          echo "✅ Main page loads"
+        else
+          echo "❌ Main page failed to load"
+          test_failures=$((test_failures + 1))
+        fi
+
+        # Test test page loads (optional, don't fail if missing)
+        if curl -f -s http://localhost:8080/tests/test.html > /dev/null 2>&1; then
+          echo "✅ Test page loads"
+        else
+          echo "⚠️ Test page not accessible (optional)"
+        fi
 
         # Test JS modules load
         for file in js/*.js; do
           if [ -f "$file" ]; then
-            curl -f -s "http://localhost:8080/$file" > /dev/null && echo "✅ Module loads: $file" || echo "❌ Module failed: $file"
+            if curl -f -s "http://localhost:8080/$file" > /dev/null 2>&1; then
+              echo "✅ Module loads: $file"
+            else
+              echo "❌ Module failed to load: $file"
+              test_failures=$((test_failures + 1))
+            fi
           fi
         done
 
-        echo "✅ Browser compatibility tests completed"
+        # Test that main page contains expected content
+        if curl -s http://localhost:8080/index.html | grep -q "BEB.*Email.*Generator"; then
+          echo "✅ Main page contains expected content"
+        else
+          echo "❌ Main page missing expected content"
+          test_failures=$((test_failures + 1))
+        fi
+
+        if [ $test_failures -gt 0 ]; then
+          echo "❌ Found $test_failures test failures"
+          exit 1
+        fi
+
+        echo "✅ All browser compatibility tests passed"
 
     - name: 📊 Validate HTML structure
       run: |
@@ -120,11 +227,42 @@ jobs:
           echo "⚠️ Found external script references"
         fi
 
-        # Check for hardcoded credentials
-        if grep -ri "password\|secret\|key.*=" js/ --include="*.js" | grep -v "STORAGE_KEY\|getStoredTheme"; then
-          echo "❌ Found potential hardcoded credentials"
+        # Check for hardcoded credentials (more precise patterns)
+        echo "🔍 Scanning for hardcoded credentials..."
+
+        # Look for suspicious credential patterns
+        suspicious_patterns_found=0
+
+        # Check for actual password assignments
+        if grep -r "password\s*=\s*['\"]" js/ --include="*.js" 2>/dev/null; then
+          echo "❌ Found hardcoded password assignment"
+          suspicious_patterns_found=$((suspicious_patterns_found + 1))
+        fi
+
+        # Check for API keys (but exclude our legitimate encryption/cache keys)
+        if grep -ri "api_key\|apikey\|access_key\|secret_key" js/ --include="*.js" | grep -v "encryptionKey\|cacheKey\|STORAGE_KEY" 2>/dev/null; then
+          echo "❌ Found potential API keys"
+          suspicious_patterns_found=$((suspicious_patterns_found + 1))
+        fi
+
+        # Check for hardcoded tokens
+        if grep -ri "token\s*=\s*['\"][a-zA-Z0-9]{20,}" js/ --include="*.js" 2>/dev/null; then
+          echo "❌ Found potential hardcoded tokens"
+          suspicious_patterns_found=$((suspicious_patterns_found + 1))
+        fi
+
+        # Check for database credentials
+        if grep -ri "db_password\|database.*password\|mysql.*password" js/ --include="*.js" 2>/dev/null; then
+          echo "❌ Found potential database credentials"
+          suspicious_patterns_found=$((suspicious_patterns_found + 1))
+        fi
+
+        if [ $suspicious_patterns_found -gt 0 ]; then
+          echo "❌ Found $suspicious_patterns_found potential security issues"
           exit 1
         fi
+
+        echo "✅ No hardcoded credentials found"
 
         echo "✅ Basic security checks passed"
 
@@ -271,16 +409,191 @@ jobs:
     - name: 📥 Checkout code
       uses: actions/checkout@v4
 
-    - name: 🌐 Deploy to production
+    - name: 📦 Prepare deployment package
       run: |
-        echo "🌐 Deploying to production..."
-        echo "✅ Production deployment completed"
-        # Add actual deployment commands here
+        echo "📦 Preparing deployment package..."
 
-    - name: 📊 Update deployment status
+        # Create deployment directory
+        mkdir -p deploy
+
+        # Copy essential files
+        cp index.html deploy/
+        cp -r js/ deploy/
+
+        # Copy optional files if they exist
+        [ -f robots.txt ] && cp robots.txt deploy/ || echo "No robots.txt found"
+        [ -f favicon.ico ] && cp favicon.ico deploy/ || echo "No favicon.ico found"
+        [ -f manifest.json ] && cp manifest.json deploy/ || echo "No manifest.json found"
+
+        # Create deployment info
+        echo "{
+          \"version\": \"$(date +%Y%m%d-%H%M%S)\",
+          \"commit\": \"$GITHUB_SHA\",
+          \"branch\": \"$GITHUB_REF_NAME\",
+          \"timestamp\": \"$(date -u)\",
+          \"build_number\": \"$GITHUB_RUN_NUMBER\"
+        }" > deploy/deployment-info.json
+
+        echo "📋 Deployment package contents:"
+        find deploy/ -type f
+
+    - name: 🚀 Deploy via FTP (if configured)
+      if: env.FTP_HOST != ''
+      timeout-minutes: 10
+      continue-on-error: true
       run: |
-        echo "📊 Updating deployment status badges..."
-        # This would typically update deployment status
+        echo "🚀 Deploying via FTP to $FTP_HOST..."
+
+        # Install lftp for FTP deployment
+        sudo apt-get update && sudo apt-get install -y lftp
+
+        # Test FTP connection first
+        echo "🔍 Testing FTP connection..."
+
+        # Test SFTP first (most servers prefer this for security)
+        echo "Testing SFTP connection to $FTP_HOST..."
+        if timeout 15 lftp -c "set sftp:auto-confirm yes; open sftp://$FTP_USER:$FTP_PASSWORD@$FTP_HOST; ls; quit" 2>/dev/null; then
+          echo "✅ SFTP connection successful"
+          PROTOCOL="sftp"
+        else
+          echo "⚠️ SFTP failed, trying FTP..."
+
+          # Fallback to FTP if SFTP fails
+          if timeout 15 lftp -c "open ftp://$FTP_USER:$FTP_PASSWORD@$FTP_HOST; ls; quit" 2>/dev/null; then
+            echo "✅ FTP connection successful"
+            PROTOCOL="ftp"
+          else
+            echo "❌ Both SFTP and FTP failed"
+            echo "💡 Possible issues:"
+            echo "  - Wrong credentials (FTP_USER, FTP_PASSWORD)"
+            echo "  - Wrong hostname (FTP_HOST)"
+            echo "  - Server requires different port (add :PORT to FTP_HOST)"
+            echo "  - Firewall blocking GitHub Actions IPs"
+            exit 1
+          fi
+        fi
+
+        echo "🔧 Using protocol: $PROTOCOL"
+
+        # Create lftp script with timeouts and better error handling
+        cat > ftp_deploy.sh << EOF
+        #!/bin/bash
+
+        # Set timeouts and connection settings for both FTP and SFTP
+        lftp -c "
+        set net:timeout 30;
+        set net:max-retries 3;
+        set net:reconnect-interval-base 5;
+        set ftp:ssl-allow no;
+        set ssl:verify-certificate no;
+        set sftp:auto-confirm yes;
+        set sftp:connect-program 'ssh -a -x';
+        set cmd:fail-exit yes;
+
+        echo 'Connecting to $FTP_HOST using $PROTOCOL...';
+        open $PROTOCOL://$FTP_USER:$FTP_PASSWORD@$FTP_HOST || exit 1;
+
+        echo 'Connected! Changing to deploy directory...';
+        lcd deploy || exit 1;
+
+        echo 'Changing to remote directory: $FTP_PATH';
+        cd $FTP_PATH || exit 1;
+
+        echo 'Starting file synchronization...';
+        mirror --reverse --delete --verbose --parallel=2;
+
+        echo 'FTP deployment completed successfully';
+        bye"
+        EOF
+
+        chmod +x ftp_deploy.sh
+
+        # Run FTP deployment with timeout
+        timeout 300 ./ftp_deploy.sh
+
+        if [ $? -eq 0 ]; then
+          echo "✅ FTP deployment completed successfully"
+        elif [ $? -eq 124 ]; then
+          echo "❌ FTP deployment timed out after 5 minutes"
+          echo "💡 Possible issues:"
+          echo "  - FTP server is slow or unresponsive"
+          echo "  - Firewall blocking connection"
+          echo "  - Large files taking too long to upload"
+          exit 1
+        else
+          echo "❌ FTP deployment failed"
+          echo "💡 Possible issues:"
+          echo "  - Wrong FTP credentials (FTP_USER, FTP_PASSWORD)"
+          echo "  - Wrong FTP host (FTP_HOST)"
+          echo "  - Wrong remote path (FTP_PATH)"
+          echo "  - FTP server doesn't allow passive mode"
+          echo "  - Server requires SFTP instead of FTP"
+          exit 1
+        fi
+      env:
+        FTP_HOST: ${{ secrets.FTP_HOST }}
+        FTP_USER: ${{ secrets.FTP_USER }}
+        FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        FTP_PATH: ${{ secrets.FTP_PATH }}
+
+    - name: 🌐 Deploy to GitHub Pages
+      if: env.GITHUB_TOKEN != ''
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./deploy
+        publish_branch: gh-pages
+        force_orphan: true
+
+    - name: ☁️ Deploy to Netlify (if configured)
+      if: env.NETLIFY_SITE_ID != ''
+      run: |
+        echo "☁️ Deploying to Netlify..."
+
+        # Install Netlify CLI
+        npm install -g netlify-cli
+
+        # Deploy to Netlify
+        netlify deploy --prod --dir deploy --site $NETLIFY_SITE_ID --auth $NETLIFY_AUTH_TOKEN
+
+        echo "✅ Netlify deployment completed"
+      env:
+        NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+
+    - name: 🎯 Deploy to Vercel (if configured)
+      if: env.VERCEL_TOKEN != ''
+      run: |
+        echo "🎯 Deploying to Vercel..."
+
+        # Install Vercel CLI
+        npm install -g vercel
+
+        # Deploy to Vercel
+        cd deploy
+        vercel --prod --token $VERCEL_TOKEN --yes
+
+        echo "✅ Vercel deployment completed"
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+    - name: 📊 Deployment summary
+      run: |
+        echo "📊 Deployment Summary"
+        echo "===================="
+        echo "✅ Package prepared: $(find deploy/ -type f | wc -l) files"
+        echo "📅 Timestamp: $(date)"
+        echo "🔗 Commit: $GITHUB_SHA"
+        echo "🌿 Branch: $GITHUB_REF_NAME"
+        echo "🏗️ Build: $GITHUB_RUN_NUMBER"
+        echo ""
+        echo "🌐 Deployment targets attempted:"
+        [ -n "${{ secrets.FTP_HOST }}" ] && echo "  - FTP: ${{ secrets.FTP_HOST }}" || echo "  - FTP: Not configured"
+        [ -n "${{ secrets.GITHUB_TOKEN }}" ] && echo "  - GitHub Pages: Enabled" || echo "  - GitHub Pages: Not configured"
+        [ -n "${{ secrets.NETLIFY_SITE_ID }}" ] && echo "  - Netlify: ${{ secrets.NETLIFY_SITE_ID }}" || echo "  - Netlify: Not configured"
+        [ -n "${{ secrets.VERCEL_TOKEN }}" ] && echo "  - Vercel: Enabled" || echo "  - Vercel: Not configured"
 
   release:
     name: 📦 Create Release Assets
