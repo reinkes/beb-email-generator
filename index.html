@@ -837,15 +837,19 @@
                         return;
                     }
                 
-                    var weekText = selectedWeek === 'current' ? 'diese Woche' : 'nächste Woche';
-                    var subject = 'Abholzeiten für ' + childNames + ' - ' + weekText;
+                    // Calculate calendar week for subject
+                    var weekDatesForSubject = getWeekDates();
+                    var calendarWeek = getCalendarWeek(weekDatesForSubject[0]); // Monday of the selected week
+                    var currentYear = weekDatesForSubject[0].getFullYear();
+
+                    var subject = 'Abholzeiten für ' + childNames + ' - KW ' + calendarWeek + '/' + currentYear;
 
                     var emailBody = 'Hallo,\n\n';
                     var childInfo = childNames;
                     if (childClass) {
                         childInfo += ' (Klasse: ' + childClass + ')';
                     }
-                    emailBody += 'hiermit teile ich Ihnen die Abholzeiten für ' + childInfo + ' für ' + weekText + ' mit:\n\n';
+                    emailBody += 'hiermit teile ich Ihnen die Abholzeiten für ' + childInfo + ' für KW ' + calendarWeek + '/' + currentYear + ' mit:\n\n';
                     emailBody += pickupList.join('\n') + '\n\n';
 
                     if (notes) {
@@ -971,6 +975,24 @@
                     day: 'numeric'
                 };
                 return date.toLocaleDateString('de-DE', options);
+            }
+
+            function getCalendarWeek(date) {
+                // Calculate ISO calendar week (KW)
+                var d = new Date(date);
+                d.setHours(0, 0, 0, 0);
+
+                // Set to nearest Thursday: current date + 4 - current day number
+                // Make Sunday's day number 7
+                d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+
+                // Get first day of year
+                var yearStart = new Date(d.getFullYear(), 0, 1);
+
+                // Calculate full weeks to nearest Thursday
+                var calendarWeek = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+
+                return calendarWeek;
             }
             
             function fallbackCopy() {
