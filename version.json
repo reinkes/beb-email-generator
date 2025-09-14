@@ -1,0 +1,89 @@
+{
+  "version": "1.1.0",
+  "release_date": "2025-01-14",
+  "release_notes": {
+    "1.1.0": {
+      "date": "2025-01-14",
+      "type": "minor",
+      "features": [
+        "Auto-Save: Automatic form data persistence using localStorage",
+        "Email Validation: Real-time email address validation with visual feedback",
+        "Time Validation: Pickup time validation (7:00-19:00 hours)",
+        "Keyboard Shortcuts: Cmd+Enter to generate email, Esc to clear focus",
+        "Loading States: Visual feedback during email generation",
+        "Class Field: Optional class designation (1a, 1b, etc.) for children",
+        "Enhanced UX: Better visual states and user feedback"
+      ],
+      "improvements": [
+        "Cross-platform email sending with fallback options",
+        "Better error handling and validation messages",
+        "Improved responsive design",
+        "Enhanced accessibility"
+      ],
+      "technical": [
+        "Modular JavaScript functions for better maintainability",
+        "CSS improvements for better visual states",
+        "HTML semantic structure improvements"
+      ]
+    },
+    "1.0.0": {
+      "date": "2025-01-13",
+      "type": "major",
+      "features": [
+        "Initial release",
+        "Email generation for BEB Norderstedt pickup times",
+        "Support for all BEB institutions",
+        "Week selection (current/next week)",
+        "Multi-child support",
+        "Cross-platform email sending",
+        "Responsive design",
+        "German localization"
+      ]
+    }
+  },
+  "roadmap": {
+    "1.2.0": {
+      "planned_date": "2025-02-01",
+      "features": [
+        "Email templates for common situations",
+        "School calendar integration",
+        "Recurring schedules"
+      ]
+    },
+    "1.3.0": {
+      "planned_date": "2025-03-01",
+      "features": [
+        "Progressive Web App (PWA)",
+        "Multi-family support",
+        "Calendar export functionality"
+      ]
+    },
+    "2.0.0": {
+      "planned_date": "2025-06-01",
+      "features": [
+        "Backend integration",
+        "Real email sending",
+        "User accounts",
+        "Advanced scheduling"
+      ]
+    }
+  },
+  "compatibility": {
+    "browsers": [
+      "Chrome 90+",
+      "Firefox 88+",
+      "Safari 14+",
+      "Edge 90+"
+    ],
+    "mobile": [
+      "iOS Safari 14+",
+      "Chrome Mobile 90+",
+      "Android Browser 90+"
+    ]
+  },
+  "build_info": {
+    "build_date": "2025-01-14T10:00:00Z",
+    "environment": "production",
+    "size_kb": "45"
+  }
+}

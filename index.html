@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <!-- GitHub Repository: https://github.com/reinkes/beb-email-generator -->
+<!-- Version: 1.1.0 -->
 <html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BEB Norderstedt - Abholzeiten E-Mail Tool</title>
+    <title>BEB Norderstedt - Abholzeiten E-Mail Tool v1.1.0</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
@@ -321,9 +322,88 @@
             background: #f9fafb;
             border-color: #9ca3af;
         }
+
+        /* Validation styles */
+        .input-valid {
+            border-color: #10b981 !important;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
+        }
+
+        .input-invalid {
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+        }
+
+        .validation-message {
+            font-size: 12px;
+            margin-top: 4px;
+            display: block;
+        }
+
+        .validation-message.valid {
+            color: #10b981;
+        }
+
+        .validation-message.invalid {
+            color: #ef4444;
+        }
+
+        /* Auto-save indicator */
+        .auto-save-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1000;
+        }
+
+        .auto-save-indicator.show {
+            opacity: 1;
+        }
+
+        /* Loading state */
+        .loading {
+            position: relative;
+            pointer-events: none;
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 16px;
+            height: 16px;
+            margin: -8px 0 0 -8px;
+            border: 2px solid #e5e7eb;
+            border-top: 2px solid #6366f1;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Keyboard shortcut hint */
+        .shortcut-hint {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-left: 8px;
+        }
     </style>
 </head>
 <body>
+    <!-- Auto-save indicator -->
+    <div class="auto-save-indicator" id="autoSaveIndicator">💾 Automatisch gespeichert</div>
+
     <div class="container">
         <h1>📧 BEB Norderstedt - Abholzeiten E-Mail</h1>
         
@@ -339,6 +419,7 @@
         <div class="form-group">
             <label for="parentEmail">Ihre E-Mail (optional - für Kopie an Sie):</label>
             <input type="email" id="parentEmail" placeholder="max.mustermann@email.com">
+            <div class="validation-message" id="emailValidation"></div>
             <small>💡 Wenn Sie Ihre E-Mail eingeben, erhalten Sie automatisch eine Kopie (CC)</small>
         </div>
         
@@ -434,7 +515,7 @@
         </div>
         
         <div class="button-group">
-            <button class="generate-btn" type="button" id="generateBtn">📝 E-Mail erstellen</button>
+            <button class="generate-btn" type="button" id="generateBtn">📝 E-Mail erstellen<span class="shortcut-hint">(⌘+Enter)</span></button>
             <button class="send-btn" type="button" disabled id="sendBtn">📧 E-Mail senden</button>
             <button class="copy-btn" type="button" disabled id="copyBtn">📋 Kopieren</button>
         </div>
@@ -448,7 +529,7 @@
         </div>
         
         <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #f1f5f9; font-size: 10px; color: #cbd5e1;">
-            Stefan Reinke
+            BEB Email Generator v1.1.0 • Stefan Reinke • <a href="https://github.com/reinkes/beb-email-generator" target="_blank" style="color: #6366f1; text-decoration: none;">GitHub</a>
         </div>
     </div>
 
@@ -457,7 +538,189 @@
             var selectedWeek = 'current';
             var currentEmailContent = '';
             var currentMailtoLink = '';
-            
+
+            // Auto-save functionality
+            var autoSaveFields = ['parentName', 'parentEmail', 'childNames', 'childClass', 'bebLocation', 'notes'];
+            var timeFields = ['mondayTime', 'tuesdayTime', 'wednesdayTime', 'thursdayTime', 'fridayTime'];
+            var checkboxFields = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+
+            function showAutoSaveIndicator() {
+                var indicator = document.getElementById('autoSaveIndicator');
+                indicator.classList.add('show');
+                setTimeout(function() {
+                    indicator.classList.remove('show');
+                }, 2000);
+            }
+
+            function saveFormData() {
+                var formData = { selectedWeek: selectedWeek };
+
+                autoSaveFields.forEach(function(fieldId) {
+                    var field = document.getElementById(fieldId);
+                    if (field) formData[fieldId] = field.value;
+                });
+
+                timeFields.forEach(function(fieldId) {
+                    var field = document.getElementById(fieldId);
+                    if (field) formData[fieldId] = field.value;
+                });
+
+                checkboxFields.forEach(function(fieldId) {
+                    var field = document.getElementById(fieldId);
+                    if (field) formData[fieldId] = field.checked;
+                });
+
+                try {
+                    localStorage.setItem('bebEmailGenerator', JSON.stringify(formData));
+                    showAutoSaveIndicator();
+                } catch (e) {
+                    console.log('Auto-save failed:', e);
+                }
+            }
+
+            function loadFormData() {
+                try {
+                    var saved = localStorage.getItem('bebEmailGenerator');
+                    if (!saved) return;
+
+                    var formData = JSON.parse(saved);
+
+                    autoSaveFields.forEach(function(fieldId) {
+                        var field = document.getElementById(fieldId);
+                        if (field && formData[fieldId]) field.value = formData[fieldId];
+                    });
+
+                    timeFields.forEach(function(fieldId) {
+                        var field = document.getElementById(fieldId);
+                        if (field && formData[fieldId]) field.value = formData[fieldId];
+                    });
+
+                    checkboxFields.forEach(function(fieldId) {
+                        var field = document.getElementById(fieldId);
+                        if (field && typeof formData[fieldId] === 'boolean') field.checked = formData[fieldId];
+                    });
+
+                    if (formData.selectedWeek) {
+                        selectedWeek = formData.selectedWeek;
+                        var weekBtns = document.querySelectorAll('.week-btn');
+                        weekBtns.forEach(function(btn) {
+                            btn.classList.remove('active');
+                            if (btn.getAttribute('data-week') === selectedWeek) {
+                                btn.classList.add('active');
+                            }
+                        });
+                    }
+
+                    // Trigger BEB location change to show leader info
+                    var bebLocation = document.getElementById('bebLocation');
+                    if (bebLocation.value) {
+                        bebLocation.dispatchEvent(new Event('change'));
+                    }
+
+                    // Validate email if loaded
+                    var parentEmail = document.getElementById('parentEmail');
+                    if (parentEmail.value) {
+                        validateEmail(parentEmail);
+                    }
+                } catch (e) {
+                    console.log('Auto-load failed:', e);
+                }
+            }
+
+            // Email validation
+            function validateEmail(emailField) {
+                var email = emailField.value.trim();
+                var validationDiv = document.getElementById('emailValidation');
+
+                if (!email) {
+                    emailField.classList.remove('input-valid', 'input-invalid');
+                    validationDiv.textContent = '';
+                    validationDiv.className = 'validation-message';
+                    return true;
+                }
+
+                var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                var isValid = emailRegex.test(email);
+
+                if (isValid) {
+                    emailField.classList.remove('input-invalid');
+                    emailField.classList.add('input-valid');
+                    validationDiv.textContent = '✓ Gültige E-Mail-Adresse';
+                    validationDiv.className = 'validation-message valid';
+                } else {
+                    emailField.classList.remove('input-valid');
+                    emailField.classList.add('input-invalid');
+                    validationDiv.textContent = '⚠ Ungültige E-Mail-Adresse';
+                    validationDiv.className = 'validation-message invalid';
+                }
+
+                return isValid;
+            }
+
+            // Time validation
+            function validateTime(timeField) {
+                var time = timeField.value;
+                if (!time) return true;
+
+                var [hours, minutes] = time.split(':').map(Number);
+                var isValid = hours >= 7 && hours <= 19; // School hours 7:00-19:00
+
+                if (isValid) {
+                    timeField.classList.remove('input-invalid');
+                    timeField.classList.add('input-valid');
+                } else {
+                    timeField.classList.remove('input-valid');
+                    timeField.classList.add('input-invalid');
+                }
+
+                return isValid;
+            }
+
+            // Setup auto-save listeners
+            autoSaveFields.concat(timeFields).forEach(function(fieldId) {
+                var field = document.getElementById(fieldId);
+                if (field) {
+                    field.addEventListener('input', saveFormData);
+                    field.addEventListener('change', saveFormData);
+
+                    if (fieldId === 'parentEmail') {
+                        field.addEventListener('input', function() {
+                            validateEmail(field);
+                        });
+                    }
+
+                    if (timeFields.includes(fieldId)) {
+                        field.addEventListener('input', function() {
+                            validateTime(field);
+                        });
+                    }
+                }
+            });
+
+            checkboxFields.forEach(function(fieldId) {
+                var field = document.getElementById(fieldId);
+                if (field) {
+                    field.addEventListener('change', saveFormData);
+                }
+            });
+
+            // Load saved data on page load
+            loadFormData();
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                // Cmd/Ctrl + Enter to generate email
+                if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('generateBtn').click();
+                }
+
+                // Escape to clear focus
+                if (e.key === 'Escape') {
+                    document.activeElement.blur();
+                }
+            });
+
             // Week selection
             var weekBtns = document.querySelectorAll('.week-btn');
             weekBtns.forEach(function(btn) {
@@ -465,6 +728,7 @@
                     selectedWeek = btn.getAttribute('data-week');
                     weekBtns.forEach(function(b) { b.classList.remove('active'); });
                     btn.classList.add('active');
+                    saveFormData(); // Auto-save week selection
                 });
             });
             
@@ -502,77 +766,115 @@
             
             // Generate email button
             document.getElementById('generateBtn').addEventListener('click', function() {
-                var parentName = document.getElementById('parentName').value.trim();
-                var parentEmail = document.getElementById('parentEmail').value.trim();
-                var bebLocation = document.getElementById('bebLocation').value;
-                var childNames = document.getElementById('childNames').value.trim();
-                var childClass = document.getElementById('childClass').value.trim();
-                var notes = document.getElementById('notes').value.trim();
-                
-                if (!parentName || !childNames) {
-                    alert('Bitte geben Sie mindestens Ihren Namen und die Namen der Kinder ein.');
-                    return;
-                }
-                
-                if (!bebLocation) {
-                    alert('Bitte wählen Sie eine Betreuungseinrichtung aus.');
-                    return;
-                }
-                
-                var days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
-                var dayNames = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag'];
-                var weekDates = getWeekDates();
-                
-                var pickupList = [];
-                
-                for (var i = 0; i < days.length; i++) {
-                    var checkbox = document.getElementById(days[i]);
-                    var timeInput = document.getElementById(days[i] + 'Time');
-                    
-                    if (checkbox && timeInput && checkbox.checked && timeInput.value) {
-                        var formattedDate = formatDate(weekDates[i]);
-                        pickupList.push('• ' + dayNames[i] + ', ' + formattedDate + ' um ' + timeInput.value + ' Uhr');
-                    }
-                }
-                
-                if (pickupList.length === 0) {
-                    alert('Bitte wählen Sie mindestens einen Tag für die Abholung aus.');
-                    return;
-                }
-                
-                var weekText = selectedWeek === 'current' ? 'diese Woche' : 'nächste Woche';
-                var subject = 'Abholzeiten für ' + childNames + ' - ' + weekText;
+                var generateBtn = this;
 
-                var emailBody = 'Hallo,\n\n';
-                var childInfo = childNames;
-                if (childClass) {
-                    childInfo += ' (Klasse: ' + childClass + ')';
-                }
-                emailBody += 'hiermit teile ich Ihnen die Abholzeiten für ' + childInfo + ' für ' + weekText + ' mit:\n\n';
-                emailBody += pickupList.join('\n') + '\n\n';
+                // Add loading state
+                generateBtn.classList.add('loading');
+                generateBtn.disabled = true;
+
+                setTimeout(function() { // Simulate processing time for better UX
+                    var parentName = document.getElementById('parentName').value.trim();
+                    var parentEmail = document.getElementById('parentEmail').value.trim();
+                    var bebLocation = document.getElementById('bebLocation').value;
+                    var childNames = document.getElementById('childNames').value.trim();
+                    var childClass = document.getElementById('childClass').value.trim();
+                    var notes = document.getElementById('notes').value.trim();
+
+                    // Validate required fields
+                    if (!parentName || !childNames) {
+                        alert('Bitte geben Sie mindestens Ihren Namen und die Namen der Kinder ein.');
+                        generateBtn.classList.remove('loading');
+                        generateBtn.disabled = false;
+                        return;
+                    }
+
+                    if (!bebLocation) {
+                        alert('Bitte wählen Sie eine Betreuungseinrichtung aus.');
+                        generateBtn.classList.remove('loading');
+                        generateBtn.disabled = false;
+                        return;
+                    }
+
+                    // Validate email if provided
+                    var emailField = document.getElementById('parentEmail');
+                    if (parentEmail && !validateEmail(emailField)) {
+                        alert('Bitte geben Sie eine gültige E-Mail-Adresse ein oder lassen Sie das Feld leer.');
+                        emailField.focus();
+                        generateBtn.classList.remove('loading');
+                        generateBtn.disabled = false;
+                        return;
+                    }
                 
-                if (notes) {
-                    emailBody += 'Zusätzliche Notizen:\n' + notes + '\n\n';
-                }
+                    var days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+                    var dayNames = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag'];
+                    var weekDates = getWeekDates();
+
+                    var pickupList = [];
+
+                    for (var i = 0; i < days.length; i++) {
+                        var checkbox = document.getElementById(days[i]);
+                        var timeInput = document.getElementById(days[i] + 'Time');
+
+                        if (checkbox && timeInput && checkbox.checked && timeInput.value) {
+                            // Validate time
+                            if (!validateTime(timeInput)) {
+                                alert('Ungültige Abholzeit für ' + dayNames[i] + '. Bitte wählen Sie eine Zeit zwischen 07:00 und 19:00 Uhr.');
+                                timeInput.focus();
+                                generateBtn.classList.remove('loading');
+                                generateBtn.disabled = false;
+                                return;
+                            }
+
+                            var formattedDate = formatDate(weekDates[i]);
+                            pickupList.push('• ' + dayNames[i] + ', ' + formattedDate + ' um ' + timeInput.value + ' Uhr');
+                        }
+                    }
+
+                    if (pickupList.length === 0) {
+                        alert('Bitte wählen Sie mindestens einen Tag für die Abholung aus.');
+                        generateBtn.classList.remove('loading');
+                        generateBtn.disabled = false;
+                        return;
+                    }
                 
-                emailBody += 'Vielen Dank!\n\n';
-                emailBody += 'Mit freundlichen Grüßen\n';
-                emailBody += parentName;
-                
-                var ccText = parentEmail ? '&cc=' + encodeURIComponent(parentEmail) : '';
-                currentMailtoLink = 'mailto:' + bebLocation + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(emailBody) + ccText;
-                
-                currentEmailContent = 'An: ' + bebLocation + '\n';
-                if (parentEmail) {
-                    currentEmailContent += 'CC: ' + parentEmail + '\n';
-                }
-                currentEmailContent += 'Betreff: ' + subject + '\n\n';
-                currentEmailContent += emailBody;
-                
-                document.getElementById('emailOutput').textContent = currentEmailContent;
-                
-                document.getElementById('sendBtn').disabled = false;
-                document.getElementById('copyBtn').disabled = false;
+                    var weekText = selectedWeek === 'current' ? 'diese Woche' : 'nächste Woche';
+                    var subject = 'Abholzeiten für ' + childNames + ' - ' + weekText;
+
+                    var emailBody = 'Hallo,\n\n';
+                    var childInfo = childNames;
+                    if (childClass) {
+                        childInfo += ' (Klasse: ' + childClass + ')';
+                    }
+                    emailBody += 'hiermit teile ich Ihnen die Abholzeiten für ' + childInfo + ' für ' + weekText + ' mit:\n\n';
+                    emailBody += pickupList.join('\n') + '\n\n';
+
+                    if (notes) {
+                        emailBody += 'Zusätzliche Notizen:\n' + notes + '\n\n';
+                    }
+
+                    emailBody += 'Vielen Dank!\n\n';
+                    emailBody += 'Mit freundlichen Grüßen\n';
+                    emailBody += parentName;
+
+                    var ccText = parentEmail ? '&cc=' + encodeURIComponent(parentEmail) : '';
+                    currentMailtoLink = 'mailto:' + bebLocation + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(emailBody) + ccText;
+
+                    currentEmailContent = 'An: ' + bebLocation + '\n';
+                    if (parentEmail) {
+                        currentEmailContent += 'CC: ' + parentEmail + '\n';
+                    }
+                    currentEmailContent += 'Betreff: ' + subject + '\n\n';
+                    currentEmailContent += emailBody;
+
+                    document.getElementById('emailOutput').textContent = currentEmailContent;
+
+                    document.getElementById('sendBtn').disabled = false;
+                    document.getElementById('copyBtn').disabled = false;
+
+                    // Remove loading state
+                    generateBtn.classList.remove('loading');
+                    generateBtn.disabled = false;
+                }, 300); // Small delay for better UX
             });
             
             // Send email button
