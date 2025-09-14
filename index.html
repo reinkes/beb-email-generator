@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<!-- GitHub Repository: https://github.com/reinkes/beb-email-generator -->
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BEB Norderstedt - Abholzeiten E-Mail Tool</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8fafc;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e2e8f0;
+        }
+        
+        h1 {
+            color: #1a202c;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.75rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+        
+        .form-group {
+            margin-bottom: 24px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #374151;
+            font-size: 0.875rem;
+        }
+        
+        input[type="text"], input[type="email"], textarea, select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+            background: white;
+            font-family: inherit;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+        
+        select {
+            cursor: pointer;
+        }
+        
+        small {
+            display: block;
+            margin-top: 6px;
+            color: #6b7280;
+            font-size: 12px;
+        }
+        
+        .leader-info {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #6b7280;
+            font-style: italic;
+            min-height: 16px;
+        }
+        
+        .pickup-schedule {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .pickup-schedule h3 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #1f2937;
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+        
+        .set-all-time {
+            margin-bottom: 20px;
+            padding: 16px;
+            background: #f0f9ff;
+            border-radius: 8px;
+            border: 1px solid #e0f2fe;
+        }
+        
+        .set-all-time label {
+            margin-bottom: 8px;
+            font-size: 0.875rem;
+            color: #0c4a6e;
+            font-weight: 500;
+        }
+        
+        .set-all-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .set-all-time input[type="time"] {
+            width: 90px;
+            padding: 6px 8px;
+            font-size: 13px;
+            border: 1px solid #bae6fd;
+            border-radius: 6px;
+        }
+        
+        .set-all-btn {
+            padding: 6px 12px;
+            background: #0ea5e9;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            white-space: nowrap;
+            flex-shrink: 0;
+            min-width: 60px;
+        }
+        
+        .set-all-btn:hover {
+            background: #0284c7;
+        }
+        
+        .day-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            transition: background-color 0.2s ease;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .day-row:hover {
+            background: #f8fafc;
+        }
+        
+        .day-checkbox {
+            margin-right: 12px;
+            width: 16px;
+            height: 16px;
+            accent-color: #6366f1;
+            flex-shrink: 0;
+        }
+        
+        .day-name {
+            font-weight: 500;
+            color: #374151;
+            flex: 1;
+            margin-right: 8px;
+            font-size: 14px;
+        }
+        
+        .time-input {
+            width: 85px;
+            min-width: 85px;
+            padding: 8px;
+            flex-shrink: 0;
+            font-size: 14px;
+            box-sizing: border-box;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+        }
+        
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 32px;
+        }
+        
+        @media (min-width: 600px) {
+            .button-group {
+                flex-direction: row;
+            }
+        }
+        
+        button {
+            flex: 1;
+            min-width: 150px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+        
+        .generate-btn {
+            background: #1f2937;
+            color: white;
+        }
+        
+        .generate-btn:hover {
+            background: #111827;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .send-btn {
+            background: #6366f1;
+            color: white;
+        }
+        
+        .send-btn:hover:not(:disabled) {
+            background: #5856eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+        }
+        
+        .copy-btn {
+            background: white;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+        
+        .copy-btn:hover:not(:disabled) {
+            background: #f9fafb;
+            border-color: #9ca3af;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        button:disabled {
+            background: #f3f4f6 !important;
+            color: #9ca3af !important;
+            border-color: #e5e7eb !important;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+        
+        .email-output {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 24px;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            white-space: pre-wrap;
+            min-height: 200px;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #374151;
+        }
+        
+        .success-message {
+            background: #ecfdf5;
+            color: #065f46;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-top: 16px;
+            display: none;
+            border: 1px solid #a7f3d0;
+            font-size: 14px;
+        }
+        
+        .info-box {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            border-radius: 0 8px 8px 0;
+            color: #1e40af;
+            font-size: 14px;
+        }
+        
+        .week-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .week-btn {
+            padding: 8px 20px;
+            border: 1px solid #d1d5db;
+            background: white;
+            color: #374151;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .week-btn.active {
+            background: #1f2937;
+            color: white;
+            border-color: #1f2937;
+        }
+        
+        .week-btn:hover:not(.active) {
+            background: #f9fafb;
+            border-color: #9ca3af;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📧 BEB Norderstedt - Abholzeiten E-Mail</h1>
+        
+        <div class="info-box">
+            <strong>Info:</strong> Dieses Tool erstellt automatisch eine E-Mail an die richtige <a href="https://www.beb-norderstedt.de/" target="_blank" style="color: #1e40af; text-decoration: underline;">BEB Betreuungseinrichtung</a> mit den Abholzeiten für Ihre Kinder.
+        </div>
+        
+        <div class="form-group">
+            <label for="parentName">Ihr Name:</label>
+            <input type="text" id="parentName" placeholder="Max Mustermann">
+        </div>
+        
+        <div class="form-group">
+            <label for="parentEmail">Ihre E-Mail (optional - für Kopie an Sie):</label>
+            <input type="email" id="parentEmail" placeholder="max.mustermann@email.com">
+            <small>💡 Wenn Sie Ihre E-Mail eingeben, erhalten Sie automatisch eine Kopie (CC)</small>
+        </div>
+        
+        <div class="form-group">
+            <label for="bebLocation">BEB Betreuungseinrichtung auswählen:</label>
+            <select id="bebLocation">
+                <option value="">-- Bitte wählen Sie die Betreuung Ihres Kindes aus --</option>
+                <option value="amwittmoor@beb-norderstedt.de" data-leader="Anja Rathjen">OGGS am Wittmoor</option>
+                <option value="falkenberg@beb-norderstedt.de" data-leader="Doreen Matecki">OGGS Falkenberg</option>
+                <option value="friedrichsgabe@beb-norderstedt.de" data-leader="Yasser Elsokkary">OGGS Friedrichsgabe</option>
+                <option value="glashuette@beb-norderstedt.de" data-leader="Grit Tiesler">OGGS Glashütte</option>
+                <option value="gks@beb-norderstedt.de" data-leader="Julian Müller">OGGS Gottfried-Keller</option>
+                <option value="harksheide-nord@beb-norderstedt.de" data-leader="Jana Marquardt / Jan Körle">OGGS Harksheide Nord</option>
+                <option value="harkshoern@beb-norderstedt.de" data-leader="Julia Stark">OGGS Harkshörn</option>
+                <option value="heidberg@beb-norderstedt.de" data-leader="Lena Thalassinos">OGGS Heidberg</option>
+                <option value="immenhorst@beb-norderstedt.de" data-leader="Nicole Stumpe">OGGS Immenhorst</option>
+                <option value="luetjenmoor@beb-norderstedt.de" data-leader="Lars Bock">OGGS Lütjenmoor</option>
+                <option value="niendorferstrasse@beb-norderstedt.de" data-leader="Elke Milatz">OGGS Niendorfer Straße</option>
+                <option value="pellworm@beb-norderstedt.de" data-leader="Janina Lawrenz">OGGS Pellwormstraße</option>
+                <option value="sz-nord@beb-norderstedt.de" data-leader="Yvonne Pauli">Schulzentrum Nord</option>
+                <option value="sz-sued@beb-norderstedt.de" data-leader="Julia Steinhau">Schulzentrum Süd</option>
+                <option value="gems-harksheide@beb-norderstedt.de" data-leader="Claudia Bordin-Ahrens">Gemeinschaftsschule Harksheide</option>
+                <option value="mail@beb-norderstedt.de" data-leader="Allgemeine Geschäftsstelle">Allgemeine Geschäftsstelle</option>
+            </select>
+            <div class="leader-info" id="leaderInfo"></div>
+        </div>
+        
+        <div class="form-group">
+            <label for="childNames">Name(n) der Kinder:</label>
+            <input type="text" id="childNames" placeholder="Anna, Tom">
+            <small>💡 Bei mehreren Kindern mit Komma trennen: Anna, Tom, Lisa</small>
+        </div>
+
+        <div class="form-group">
+            <label for="childClass">Klasse (optional):</label>
+            <input type="text" id="childClass" placeholder="1a, 2b, 3c...">
+            <small>💡 z.B. 1a oder bei mehreren Kindern: 1a, 2b</small>
+        </div>
+        
+        <div class="form-group">
+            <label>Woche auswählen:</label>
+            <div class="week-selector">
+                <button type="button" class="week-btn active" data-week="current">Diese Woche</button>
+                <button type="button" class="week-btn" data-week="next">Nächste Woche</button>
+            </div>
+        </div>
+        
+        <div class="pickup-schedule">
+            <h3>📅 Abholzeiten festlegen:</h3>
+            
+            <div class="set-all-time">
+                <label for="setAllTime">Alle Zeiten auf einmal setzen (optional):</label>
+                <div class="set-all-row">
+                    <input type="time" id="setAllTime" value="16:00">
+                    <button type="button" class="set-all-btn" id="setAllBtn">Setzen</button>
+                </div>
+            </div>
+            
+            <div class="day-row">
+                <input type="checkbox" class="day-checkbox" id="monday">
+                <label class="day-name" for="monday">Montag</label>
+                <input type="time" class="time-input" id="mondayTime" value="16:00">
+            </div>
+            
+            <div class="day-row">
+                <input type="checkbox" class="day-checkbox" id="tuesday">
+                <label class="day-name" for="tuesday">Dienstag</label>
+                <input type="time" class="time-input" id="tuesdayTime" value="16:00">
+            </div>
+            
+            <div class="day-row">
+                <input type="checkbox" class="day-checkbox" id="wednesday">
+                <label class="day-name" for="wednesday">Mittwoch</label>
+                <input type="time" class="time-input" id="wednesdayTime" value="16:00">
+            </div>
+            
+            <div class="day-row">
+                <input type="checkbox" class="day-checkbox" id="thursday">
+                <label class="day-name" for="thursday">Donnerstag</label>
+                <input type="time" class="time-input" id="thursdayTime" value="16:00">
+            </div>
+            
+            <div class="day-row">
+                <input type="checkbox" class="day-checkbox" id="friday">
+                <label class="day-name" for="friday">Freitag</label>
+                <input type="time" class="time-input" id="fridayTime" value="16:00">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="notes">Zusätzliche Notizen (optional):</label>
+            <textarea id="notes" rows="3" placeholder="z.B. Besondere Anweisungen oder Änderungen..."></textarea>
+        </div>
+        
+        <div class="button-group">
+            <button class="generate-btn" type="button" id="generateBtn">📝 E-Mail erstellen</button>
+            <button class="send-btn" type="button" disabled id="sendBtn">📧 E-Mail senden</button>
+            <button class="copy-btn" type="button" disabled id="copyBtn">📋 Kopieren</button>
+        </div>
+        
+        <div class="success-message" id="successMessage">
+            ✅ E-Mail wurde in die Zwischenablage kopiert!
+        </div>
+        
+        <div class="email-output" id="emailOutput">
+            Klicken Sie auf "E-Mail erstellen" um eine Nachricht zu generieren...
+        </div>
+        
+        <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #f1f5f9; font-size: 10px; color: #cbd5e1;">
+            Stefan Reinke
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var selectedWeek = 'current';
+            var currentEmailContent = '';
+            var currentMailtoLink = '';
+            
+            // Week selection
+            var weekBtns = document.querySelectorAll('.week-btn');
+            weekBtns.forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    selectedWeek = btn.getAttribute('data-week');
+                    weekBtns.forEach(function(b) { b.classList.remove('active'); });
+                    btn.classList.add('active');
+                });
+            });
+            
+            // Set all times button
+            document.getElementById('setAllBtn').addEventListener('click', function() {
+                var setAllTimeInput = document.getElementById('setAllTime');
+                var selectedTime = setAllTimeInput.value;
+                
+                if (!selectedTime) {
+                    alert('Bitte wählen Sie zuerst eine Zeit aus.');
+                    return;
+                }
+                
+                var timeInputs = ['mondayTime', 'tuesdayTime', 'wednesdayTime', 'thursdayTime', 'fridayTime'];
+                timeInputs.forEach(function(id) {
+                    var timeInput = document.getElementById(id);
+                    if (timeInput) {
+                        timeInput.value = selectedTime;
+                    }
+                });
+            });
+            
+            // BEB location change
+            document.getElementById('bebLocation').addEventListener('change', function() {
+                var select = this;
+                var leaderInfo = document.getElementById('leaderInfo');
+                var selectedOption = select.options[select.selectedIndex];
+                
+                if (selectedOption && selectedOption.getAttribute('data-leader')) {
+                    leaderInfo.textContent = 'Leitung: ' + selectedOption.getAttribute('data-leader');
+                } else {
+                    leaderInfo.textContent = '';
+                }
+            });
+            
+            // Generate email button
+            document.getElementById('generateBtn').addEventListener('click', function() {
+                var parentName = document.getElementById('parentName').value.trim();
+                var parentEmail = document.getElementById('parentEmail').value.trim();
+                var bebLocation = document.getElementById('bebLocation').value;
+                var childNames = document.getElementById('childNames').value.trim();
+                var childClass = document.getElementById('childClass').value.trim();
+                var notes = document.getElementById('notes').value.trim();
+                
+                if (!parentName || !childNames) {
+                    alert('Bitte geben Sie mindestens Ihren Namen und die Namen der Kinder ein.');
+                    return;
+                }
+                
+                if (!bebLocation) {
+                    alert('Bitte wählen Sie eine Betreuungseinrichtung aus.');
+                    return;
+                }
+                
+                var days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+                var dayNames = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag'];
+                var weekDates = getWeekDates();
+                
+                var pickupList = [];
+                
+                for (var i = 0; i < days.length; i++) {
+                    var checkbox = document.getElementById(days[i]);
+                    var timeInput = document.getElementById(days[i] + 'Time');
+                    
+                    if (checkbox && timeInput && checkbox.checked && timeInput.value) {
+                        var formattedDate = formatDate(weekDates[i]);
+                        pickupList.push('• ' + dayNames[i] + ', ' + formattedDate + ' um ' + timeInput.value + ' Uhr');
+                    }
+                }
+                
+                if (pickupList.length === 0) {
+                    alert('Bitte wählen Sie mindestens einen Tag für die Abholung aus.');
+                    return;
+                }
+                
+                var weekText = selectedWeek === 'current' ? 'diese Woche' : 'nächste Woche';
+                var subject = 'Abholzeiten für ' + childNames + ' - ' + weekText;
+
+                var emailBody = 'Hallo,\n\n';
+                var childInfo = childNames;
+                if (childClass) {
+                    childInfo += ' (Klasse: ' + childClass + ')';
+                }
+                emailBody += 'hiermit teile ich Ihnen die Abholzeiten für ' + childInfo + ' für ' + weekText + ' mit:\n\n';
+                emailBody += pickupList.join('\n') + '\n\n';
+                
+                if (notes) {
+                    emailBody += 'Zusätzliche Notizen:\n' + notes + '\n\n';
+                }
+                
+                emailBody += 'Vielen Dank!\n\n';
+                emailBody += 'Mit freundlichen Grüßen\n';
+                emailBody += parentName;
+                
+                var ccText = parentEmail ? '&cc=' + encodeURIComponent(parentEmail) : '';
+                currentMailtoLink = 'mailto:' + bebLocation + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(emailBody) + ccText;
+                
+                currentEmailContent = 'An: ' + bebLocation + '\n';
+                if (parentEmail) {
+                    currentEmailContent += 'CC: ' + parentEmail + '\n';
+                }
+                currentEmailContent += 'Betreff: ' + subject + '\n\n';
+                currentEmailContent += emailBody;
+                
+                document.getElementById('emailOutput').textContent = currentEmailContent;
+                
+                document.getElementById('sendBtn').disabled = false;
+                document.getElementById('copyBtn').disabled = false;
+            });
+            
+            // Send email button
+            document.getElementById('sendBtn').addEventListener('click', function() {
+                if (!currentMailtoLink) {
+                    alert('Bitte erstellen Sie zuerst eine E-Mail.');
+                    return;
+                }
+
+                // Detect if we're on mobile or desktop
+                var isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+                if (isMobile) {
+                    // On mobile, mailto usually works well
+                    window.location.href = currentMailtoLink;
+                } else {
+                    // On desktop, provide user with options immediately
+                    var userChoice = confirm(
+                        'E-Mail-Versand Optionen:\n\n' +
+                        '✅ OK = E-Mail-Programm versuchen zu öffnen\n' +
+                        '📋 Abbrechen = E-Mail in Zwischenablage kopieren\n\n' +
+                        'Empfehlung für Mac: "Abbrechen" wählen und manuell in Mail einfügen'
+                    );
+
+                    if (userChoice) {
+                        // User chose to try opening email client
+                        try {
+                            // Create a temporary link and click it (more reliable than window.location)
+                            var tempLink = document.createElement('a');
+                            tempLink.href = currentMailtoLink;
+                            tempLink.style.display = 'none';
+                            document.body.appendChild(tempLink);
+                            tempLink.click();
+                            document.body.removeChild(tempLink);
+
+                            // Show success message
+                            setTimeout(function() {
+                                alert('✅ Versuch, E-Mail-Programm zu öffnen!\n\nFalls es nicht funktioniert hat, nutzen Sie den "📋 Kopieren" Button.');
+                            }, 500);
+                        } catch (e) {
+                            showEmailInstructions();
+                        }
+                    } else {
+                        // User chose to copy to clipboard
+                        copyEmailToClipboard();
+                    }
+                }
+            });
+            
+            // Copy email button
+            document.getElementById('copyBtn').addEventListener('click', function() {
+                if (!currentEmailContent) {
+                    alert('Bitte erstellen Sie zuerst eine E-Mail.');
+                    return;
+                }
+                
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(currentEmailContent).then(function() {
+                        showSuccessMessage();
+                    }).catch(function() {
+                        fallbackCopy();
+                    });
+                } else {
+                    fallbackCopy();
+                }
+            });
+            
+            function getWeekDates() {
+                var today = new Date();
+                var currentDay = today.getDay();
+                var monday = new Date(today);
+                
+                var daysToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+                monday.setDate(today.getDate() + daysToMonday);
+                
+                if (selectedWeek === 'next') {
+                    monday.setDate(monday.getDate() + 7);
+                }
+                
+                var weekDates = [];
+                for (var i = 0; i < 5; i++) {
+                    var date = new Date(monday);
+                    date.setDate(monday.getDate() + i);
+                    weekDates.push(date);
+                }
+                
+                return weekDates;
+            }
+            
+            function formatDate(date) {
+                var options = {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                };
+                return date.toLocaleDateString('de-DE', options);
+            }
+            
+            function fallbackCopy() {
+                var textarea = document.createElement('textarea');
+                textarea.value = currentEmailContent;
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    showSuccessMessage();
+                } catch (err) {
+                    alert('Kopieren fehlgeschlagen. Bitte markieren Sie den Text manuell und kopieren Sie ihn.');
+                }
+                document.body.removeChild(textarea);
+            }
+            
+            function showSuccessMessage() {
+                var successMessage = document.getElementById('successMessage');
+                successMessage.style.display = 'block';
+                setTimeout(function() {
+                    successMessage.style.display = 'none';
+                }, 3000);
+            }
+
+            function copyEmailToClipboard() {
+                if (!currentEmailContent) {
+                    alert('Bitte erstellen Sie zuerst eine E-Mail.');
+                    return;
+                }
+
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(currentEmailContent).then(function() {
+                        var emailMatch = currentMailtoLink.match(/mailto:([^?]+)/);
+                        var recipientEmail = emailMatch ? emailMatch[1] : 'E-Mail-Adresse';
+
+                        alert('✅ E-Mail wurde in die Zwischenablage kopiert!\n\n' +
+                              'Nächste Schritte:\n' +
+                              '1. Öffnen Sie Ihr E-Mail-Programm (Mail, Outlook, Gmail, etc.)\n' +
+                              '2. Erstellen Sie eine neue E-Mail\n' +
+                              '3. Fügen Sie den kopierten Text ein (Cmd+V)\n' +
+                              '4. Senden an: ' + recipientEmail);
+                        showSuccessMessage();
+                    }).catch(function() {
+                        fallbackCopy();
+                    });
+                } else {
+                    fallbackCopy();
+                }
+            }
+
+            function showEmailInstructions() {
+                var message = 'Das automatische Öffnen des E-Mail-Programms hat nicht funktioniert.\n\n';
+                message += 'Alternativen:\n';
+                message += '1. Nutzen Sie den "📋 Kopieren" Button und fügen Sie den Text in Ihr E-Mail-Programm ein\n';
+                message += '2. Oder öffnen Sie manuell Ihr E-Mail-Programm und erstellen Sie eine neue E-Mail\n\n';
+                message += 'Die E-Mail sollte gesendet werden an:\n';
+
+                // Extract email from mailto link
+                var emailMatch = currentMailtoLink.match(/mailto:([^?]+)/);
+                if (emailMatch) {
+                    message += emailMatch[1];
+                }
+
+                alert(message);
+
+                // Offer to copy automatically
+                copyEmailToClipboard();
+            }
+        });
+    </script>
+</body>
+</html>
