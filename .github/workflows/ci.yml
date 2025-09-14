@@ -437,9 +437,9 @@ jobs:
         echo "📋 Deployment package contents:"
         find deploy/ -type f
 
-    - name: 🚀 Deploy via FTP (if configured)
+    - name: 🚀 Deploy via SFTP/FTP (if configured)
       if: env.FTP_HOST != ''
-      timeout-minutes: 10
+      timeout-minutes: 15
       continue-on-error: true
       run: |
         echo "🚀 Deploying via SFTP/FTP to $FTP_HOST..."
@@ -451,108 +451,96 @@ jobs:
         echo "  - Path: $FTP_PATH"
         echo "  - Password: ${FTP_PASSWORD:+[SET]}${FTP_PASSWORD:-[NOT SET]}"
 
-        # Install lftp for FTP deployment
-        sudo apt-get update && sudo apt-get install -y lftp
+        # Install lftp for IONOS SFTP deployment
+        sudo apt-get update -qq
+        sudo apt-get install -y lftp
 
-        # Test FTP connection first
-        echo "🔍 Testing FTP connection..."
-
-        # Test SFTP first (most servers prefer this for security)
-        echo "Testing SFTP connection to $FTP_HOST..."
-        if timeout 15 lftp -c "set sftp:auto-confirm yes; open sftp://$FTP_USER:$FTP_PASSWORD@$FTP_HOST; ls; quit" 2>/dev/null; then
-          echo "✅ SFTP connection successful"
-          PROTOCOL="sftp"
-        else
-          echo "⚠️ SFTP failed, trying FTP..."
-
-          # Fallback to FTP if SFTP fails
-          if timeout 15 lftp -c "open ftp://$FTP_USER:$FTP_PASSWORD@$FTP_HOST; ls; quit" 2>/dev/null; then
-            echo "✅ FTP connection successful"
-            PROTOCOL="ftp"
-          else
-            echo "❌ Both SFTP and FTP failed"
-            echo "💡 Possible issues:"
-            echo "  - Wrong credentials (FTP_USER, FTP_PASSWORD)"
-            echo "  - Wrong hostname (FTP_HOST)"
-            echo "  - Server requires different port (add :PORT to FTP_HOST)"
-            echo "  - Firewall blocking GitHub Actions IPs"
-            exit 1
-          fi
-        fi
-
-        echo "🔧 Using protocol: $PROTOCOL"
-
-        # Create lftp script with timeouts and better error handling
-        cat > ftp_deploy.sh << EOF
-        #!/bin/bash
-
-        # Set timeouts and connection settings for both FTP and SFTP
-        lftp -c "
-        set net:timeout 30;
-        set net:max-retries 3;
-        set net:reconnect-interval-base 5;
-        set ftp:ssl-allow no;
-        set ssl:verify-certificate no;
-        set sftp:auto-confirm yes;
-        set sftp:connect-program 'ssh -a -x';
-        set cmd:fail-exit yes;
-
-        echo 'Connecting to $FTP_HOST using $PROTOCOL...';
-        open $PROTOCOL://$FTP_USER:$FTP_PASSWORD@$FTP_HOST || exit 1;
-
-        echo 'Connected! Checking current directory...';
-        pwd;
-
-        echo 'Listing current directory contents...';
-        ls;
-
-        echo 'Changing to local deploy directory...';
-        lcd deploy || exit 1;
-
-        echo 'Current remote directory looks like web root - deploying here!';
-        echo 'Files will be uploaded to current directory.';
-
-        # Check if we need to change directory
-        if [ -n '$FTP_PATH' ] && [ '$FTP_PATH' != '/' ] && [ '$FTP_PATH' != '.' ]; then
-          echo 'Attempting to change to specified directory: $FTP_PATH';
-          cd '$FTP_PATH' || {
-            echo 'Could not change to $FTP_PATH, staying in current directory';
-            echo 'Current directory appears to be the web root anyway';
-          };
-        fi
-
-        echo 'Ready to deploy! Current location:';
-        pwd;
-
-        echo 'Starting file synchronization...';
-        mirror --reverse --delete --verbose --parallel=2;
-
-        echo 'FTP deployment completed successfully';
-        bye"
+        # Create SSH config for better compatibility
+        mkdir -p ~/.ssh
+        cat > ~/.ssh/config << EOF
+        Host *
+            StrictHostKeyChecking no
+            UserKnownHostsFile /dev/null
+            ServerAliveInterval 60
+            ServerAliveCountMax 3
+            ConnectTimeout 30
         EOF
+        chmod 600 ~/.ssh/config
 
-        chmod +x ftp_deploy.sh
-
-        # Run FTP deployment with timeout
-        timeout 300 ./ftp_deploy.sh
-
-        if [ $? -eq 0 ]; then
-          echo "✅ FTP deployment completed successfully"
-        elif [ $? -eq 124 ]; then
-          echo "❌ FTP deployment timed out after 5 minutes"
-          echo "💡 Possible issues:"
-          echo "  - FTP server is slow or unresponsive"
-          echo "  - Firewall blocking connection"
-          echo "  - Large files taking too long to upload"
-          exit 1
+        # Test IONOS SFTP connectivity
+        echo "🔍 Testing IONOS SFTP connectivity..."
+        if timeout 10 nc -zv $FTP_HOST 22 2>/dev/null; then
+          echo "✅ IONOS SFTP port 22 is reachable"
+          SFTP_AVAILABLE=true
         else
-          echo "❌ FTP deployment failed"
-          echo "💡 Possible issues:"
-          echo "  - Wrong FTP credentials (FTP_USER, FTP_PASSWORD)"
-          echo "  - Wrong FTP host (FTP_HOST)"
-          echo "  - Wrong remote path (FTP_PATH)"
-          echo "  - FTP server doesn't allow passive mode"
-          echo "  - Server requires SFTP instead of FTP"
+          echo "❌ IONOS SFTP port 22 not reachable"
+          SFTP_AVAILABLE=false
+        fi
+
+        DEPLOY_SUCCESS=false
+
+        # IONOS SFTP Deployment (simplified, no fallbacks)
+        if [ "$SFTP_AVAILABLE" = true ]; then
+          echo "🔐 Deploying to IONOS via SFTP..."
+
+          # Simple IONOS SFTP deployment
+          timeout 180 lftp -c "
+            set net:timeout 30
+            set net:max-retries 2
+            set sftp:auto-confirm yes
+            set sftp:connect-program 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+            set cmd:fail-exit yes
+
+            echo 'Connecting to IONOS SFTP...'
+            open sftp://$FTP_USER:$FTP_PASSWORD@$FTP_HOST
+
+            echo 'Connected! Current directory:'
+            pwd
+
+            echo 'Changing to local deploy directory...'
+            lcd deploy
+
+            echo 'Starting file upload...'
+            mirror --reverse --delete --verbose
+
+            echo 'IONOS SFTP deployment completed!'
+            quit
+          "
+
+          if [ $? -eq 0 ]; then
+            echo "✅ IONOS SFTP deployment successful!"
+            DEPLOY_SUCCESS=true
+          else
+            echo "❌ IONOS SFTP deployment failed"
+            DEPLOY_SUCCESS=false
+          fi
+        else
+          echo "❌ SFTP port not reachable"
+          DEPLOY_SUCCESS=false
+        fi
+
+
+        # Final status check
+        if [ "$DEPLOY_SUCCESS" = true ]; then
+          echo "🎉 Deployment completed successfully!"
+        else
+          echo "❌ All deployment methods failed"
+          echo ""
+          echo "🔍 Troubleshooting information:"
+          echo "  - SFTP available: $SFTP_AVAILABLE"
+          echo "  - FTP available: $FTP_AVAILABLE"
+          echo ""
+          echo "💡 Common solutions:"
+          echo "  1. Check that FTP_USER and FTP_PASSWORD are correct in GitHub Secrets"
+          echo "  2. Verify FTP_HOST is the correct hostname (without http:// or ftp://)"
+          echo "  3. Ensure your hosting provider allows SFTP/FTP connections from GitHub IPs"
+          echo "  4. Check if your password contains special characters that need escaping"
+          echo "  5. Verify FTP_PATH points to the correct directory"
+          echo ""
+          echo "🔧 Debug commands you can run locally:"
+          echo "  sftp $FTP_USER@$FTP_HOST"
+          echo "  lftp sftp://$FTP_USER@$FTP_HOST"
+
           exit 1
         fi
       env:
