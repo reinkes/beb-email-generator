@@ -1,6 +1,15 @@
 # 📧 BEB Norderstedt - Abholzeiten E-Mail Generator
 
+[![CI/CD Pipeline](https://github.com/reinkes/beb-email-generator/actions/workflows/ci.yml/badge.svg)](https://github.com/reinkes/beb-email-generator/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/reinkes/beb-email-generator/actions/workflows/codeql.yml/badge.svg)](https://github.com/reinkes/beb-email-generator/actions/workflows/codeql.yml)
+[![GitHub release](https://img.shields.io/github/v/release/reinkes/beb-email-generator)](https://github.com/reinkes/beb-email-generator/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub issues](https://img.shields.io/github/issues/reinkes/beb-email-generator)](https://github.com/reinkes/beb-email-generator/issues)
+[![GitHub stars](https://img.shields.io/github/stars/reinkes/beb-email-generator?style=social)](https://github.com/reinkes/beb-email-generator/stargazers)
+
 Ein benutzerfreundliches Tool zur automatischen Erstellung von E-Mails an BEB Betreuungseinrichtungen in Norderstedt mit Abholzeiten für Kinder.
+
+> 🌍 **[English Version](README.en.md)** | 🇩🇪 **Deutsche Version**
 
 ## 🌐 Live Demo
 

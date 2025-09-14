@@ -402,9 +402,232 @@
             color: #9ca3af;
             margin-left: 8px;
         }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 1001;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .theme-toggle:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Dark Theme Styles */
+        .theme-dark {
+            color-scheme: dark;
+        }
+
+        .theme-dark body {
+            background: #0f172a;
+            color: #f1f5f9;
+        }
+
+        .theme-dark .container {
+            background: #1e293b;
+            border-color: #334155;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .theme-dark h1 {
+            color: #f1f5f9;
+        }
+
+        .theme-dark label {
+            color: #cbd5e1;
+        }
+
+        .theme-dark input[type="text"],
+        .theme-dark input[type="email"],
+        .theme-dark textarea,
+        .theme-dark select {
+            background: #334155;
+            border-color: #475569;
+            color: #f1f5f9;
+        }
+
+        .theme-dark input:focus,
+        .theme-dark textarea:focus,
+        .theme-dark select:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+        }
+
+        .theme-dark small {
+            color: #94a3b8;
+        }
+
+        .theme-dark .leader-info {
+            color: #94a3b8;
+        }
+
+        .theme-dark .pickup-schedule {
+            background: #1e293b;
+            border-color: #334155;
+        }
+
+        .theme-dark .pickup-schedule h3 {
+            color: #f1f5f9;
+        }
+
+        .theme-dark .set-all-time {
+            background: #1e3a8a;
+            border-color: #1e40af;
+        }
+
+        .theme-dark .set-all-time label {
+            color: #bfdbfe;
+        }
+
+        .theme-dark .set-all-time input[type="time"] {
+            background: #334155;
+            border-color: #3b82f6;
+            color: #f1f5f9;
+        }
+
+        .theme-dark .set-all-btn {
+            background: #3b82f6;
+        }
+
+        .theme-dark .set-all-btn:hover {
+            background: #2563eb;
+        }
+
+        .theme-dark .day-row {
+            background: #334155;
+            border-color: #475569;
+        }
+
+        .theme-dark .day-row:hover {
+            background: #475569;
+        }
+
+        .theme-dark .day-name {
+            color: #cbd5e1;
+        }
+
+        .theme-dark .time-input {
+            background: #1e293b;
+            border-color: #475569;
+            color: #f1f5f9;
+        }
+
+        .theme-dark .generate-btn {
+            background: #1f2937;
+        }
+
+        .theme-dark .generate-btn:hover {
+            background: #111827;
+        }
+
+        .theme-dark .send-btn {
+            background: #6366f1;
+        }
+
+        .theme-dark .send-btn:hover:not(:disabled) {
+            background: #5856eb;
+        }
+
+        .theme-dark .copy-btn {
+            background: #334155;
+            color: #cbd5e1;
+            border-color: #475569;
+        }
+
+        .theme-dark .copy-btn:hover:not(:disabled) {
+            background: #475569;
+            border-color: #64748b;
+        }
+
+        .theme-dark .email-output {
+            background: #1e293b;
+            border-color: #334155;
+            color: #cbd5e1;
+        }
+
+        .theme-dark .success-message {
+            background: #064e3b;
+            color: #6ee7b7;
+            border-color: #059669;
+        }
+
+        .theme-dark .info-box {
+            background: #1e3a8a;
+            border-color: #3b82f6;
+            color: #bfdbfe;
+        }
+
+        .theme-dark .info-box a {
+            color: #93c5fd !important;
+        }
+
+        .theme-dark .week-btn {
+            background: #334155;
+            color: #cbd5e1;
+            border-color: #475569;
+        }
+
+        .theme-dark .week-btn.active {
+            background: #1f2937;
+            color: #f1f5f9;
+            border-color: #1f2937;
+        }
+
+        .theme-dark .week-btn:hover:not(.active) {
+            background: #475569;
+            border-color: #64748b;
+        }
+
+        .theme-dark .auto-save-indicator {
+            background: #059669;
+            color: white;
+        }
+
+        .theme-dark .theme-toggle {
+            background: #334155;
+            color: #cbd5e1;
+            border-color: #475569;
+        }
+
+        .theme-dark .theme-toggle:hover {
+            background: #475569;
+        }
+
+        /* Validation styles for dark theme */
+        .theme-dark .input-valid {
+            border-color: #10b981 !important;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3) !important;
+        }
+
+        .theme-dark .input-invalid {
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3) !important;
+        }
+
+        .theme-dark .validation-message.valid {
+            color: #34d399;
+        }
+
+        .theme-dark .validation-message.invalid {
+            color: #f87171;
+        }
     </style>
 </head>
 <body>
+    <!-- Theme toggle -->
+    <button class="theme-toggle" id="themeToggle" aria-label="Theme wechseln">🔄 System</button>
+
     <!-- Auto-save indicator -->
     <div class="auto-save-indicator" id="autoSaveIndicator">💾 Automatisch gespeichert</div>
 
@@ -538,6 +761,7 @@
     </div>
 
     <!-- Modular JavaScript Architecture -->
+    <script src="js/theme.js"></script>
     <script src="js/performance.js"></script>
     <script src="js/security.js"></script>
     <script src="js/storage.js"></script>

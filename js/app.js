@@ -101,7 +101,8 @@ class BEBEmailApp {
     initializeModules() {
         console.info('📦 Initializing modules...');
 
-        // Initialize performance and security modules first
+        // Initialize theme, performance and security modules first
+        this.theme = new ThemeManager();
         this.performance = new PerformanceManager();
         this.security = new SecurityManager();
 
@@ -246,11 +247,14 @@ class BEBEmailApp {
             getCalendar: () => this.calendar,
             getEmail: () => this.email,
             getUI: () => this.ui,
+            getTheme: () => this.theme?.getThemeStats?.(),
             getPerformance: () => this.performance?.getMetrics?.(),
             getSecurity: () => this.security?.getSecurityReport?.(),
             getCacheStats: () => this.performance?.getCacheStats?.(),
             getMemoryUsage: () => this.performance?.getMemoryUsage?.(),
             clearCache: () => this.performance?.clearCache?.(),
+            toggleTheme: () => this.theme?.toggleTheme?.(),
+            setTheme: (theme) => this.theme?.setTheme?.(theme),
             version: this.version
         };
     }
