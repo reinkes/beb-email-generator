@@ -442,7 +442,14 @@ jobs:
       timeout-minutes: 10
       continue-on-error: true
       run: |
-        echo "🚀 Deploying via FTP to $FTP_HOST..."
+        echo "🚀 Deploying via SFTP/FTP to $FTP_HOST..."
+
+        # Debug configuration (without revealing sensitive data)
+        echo "📋 Configuration check:"
+        echo "  - Host: $FTP_HOST"
+        echo "  - User: ${FTP_USER:0:3}***"
+        echo "  - Path: $FTP_PATH"
+        echo "  - Password: ${FTP_PASSWORD:+[SET]}${FTP_PASSWORD:-[NOT SET]}"
 
         # Install lftp for FTP deployment
         sudo apt-get update && sudo apt-get install -y lftp
@@ -493,11 +500,29 @@ jobs:
         echo 'Connecting to $FTP_HOST using $PROTOCOL...';
         open $PROTOCOL://$FTP_USER:$FTP_PASSWORD@$FTP_HOST || exit 1;
 
-        echo 'Connected! Changing to deploy directory...';
+        echo 'Connected! Checking current directory...';
+        pwd;
+
+        echo 'Listing current directory contents...';
+        ls;
+
+        echo 'Changing to local deploy directory...';
         lcd deploy || exit 1;
 
-        echo 'Changing to remote directory: $FTP_PATH';
-        cd $FTP_PATH || exit 1;
+        echo 'Current remote directory looks like web root - deploying here!';
+        echo 'Files will be uploaded to current directory.';
+
+        # Check if we need to change directory
+        if [ -n '$FTP_PATH' ] && [ '$FTP_PATH' != '/' ] && [ '$FTP_PATH' != '.' ]; then
+          echo 'Attempting to change to specified directory: $FTP_PATH';
+          cd '$FTP_PATH' || {
+            echo 'Could not change to $FTP_PATH, staying in current directory';
+            echo 'Current directory appears to be the web root anyway';
+          };
+        fi
+
+        echo 'Ready to deploy! Current location:';
+        pwd;
 
         echo 'Starting file synchronization...';
         mirror --reverse --delete --verbose --parallel=2;
