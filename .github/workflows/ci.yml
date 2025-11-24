@@ -15,7 +15,7 @@ jobs:
 
     steps:
     - name: 📥 Checkout code
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: 🔍 Debug environment
       run: |
@@ -303,7 +303,7 @@ jobs:
 
     steps:
     - name: 📥 Checkout code
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: ♿ Basic accessibility checks
       run: |
@@ -346,7 +346,7 @@ jobs:
 
     steps:
     - name: 📥 Checkout code
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: ⚡ Basic performance checks
       run: |
@@ -391,7 +391,7 @@ jobs:
 
     steps:
     - name: 📥 Checkout code
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: 🚀 Deploy to staging
       run: |
@@ -407,7 +407,7 @@ jobs:
 
     steps:
     - name: 📥 Checkout code
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: 📦 Prepare deployment package
       run: |
@@ -615,7 +615,7 @@ jobs:
 
     steps:
     - name: 📥 Checkout code
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: 📦 Create distribution package
       run: |
